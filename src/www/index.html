@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>WireGuard</title>
+  <title>ARIT VPN</title>
   <link href="./css/vendor/tailwind.min.css" rel="stylesheet">
   <link rel="manifest" href="./manifest.json">
   <link rel="icon" type="image/png" href="./img/favicon.png">
@@ -35,9 +35,9 @@
         </span>
         <h1 class="text-4xl font-medium mt-10 mb-2">
           <img src="./img/logo.png" width="32" class="inline align-middle" />
-          <span class="align-middle">WireGuard</span>
+          <span class="align-middle">ARIT VPN</span>
         </h1>
-        <h2 class="text-sm text-gray-400 mb-10"></h2>
+        <h2 class="text-sm text-gray-400 mb-10">Wireguard VPN with gateway selection</h2>
 
         <div v-if="latestRelease" class="bg-red-800 p-4 text-white text-sm font-small mb-10 rounded-md shadow-lg"
           :title="`v${currentRelease} → v${latestRelease.version}`">
@@ -54,13 +54,14 @@
           </div>
         </div>
 
+        <!--Client Table-->
         <div class="shadow-md rounded-lg bg-white overflow-hidden">
           <div class="flex flex-row flex-auto items-center p-3 px-5 border border-b-2 border-gray-100">
             <div class="flex-grow">
               <p class="text-2xl font-medium">Clients</p>
             </div>
             <div class="flex-shrink-0">
-              <button @click="clientCreate = true; clientCreateName = '';"
+              <button @click="clientCreate = true; clientCreateIsNode = false; clientCreateName = '';"
                 class="hover:bg-red-800 hover:border-red-800 hover:text-white text-gray-700 border-2 border-gray-100 py-2 px-4 rounded inline-flex items-center transition">
                 <svg class="w-4 mr-2" inline xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                   stroke="currentColor">
@@ -74,7 +75,7 @@
 
           <div>
             <!-- Client -->
-            <div v-if="clients && clients.length > 0" v-for="client in clients" :key="client.id"
+            <div v-if="filteredClients && filteredClients.length > 0" v-for="client in filteredClients" :key="client.id"
               class="relative overflow-hidden border-b border-gray-100 border-solid">
 
               <!-- Chart -->
@@ -279,9 +280,9 @@
               </div>
 
             </div>
-            <div v-if="clients && clients.length === 0">
+            <div v-if="filteredClients && filteredClients.length === 0">
               <p class="text-center m-10 text-gray-400 text-sm">There are no clients yet.<br /><br />
-                <button @click="clientCreate = true; clientCreateName = '';"
+                <button @click="clientCreate = true; clientCreateIsNode = false; clientCreateName = '';"
                   class="bg-red-800 text-white hover:bg-red-700 border-2 border-none py-2 px-4 rounded inline-flex items-center transition">
                   <svg class="w-4 mr-2" inline xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -292,7 +293,7 @@
                 </button>
               </p>
             </div>
-            <div v-if="clients === null" class="text-gray-200 p-5">
+            <div v-if="filteredClients === null" class="text-gray-200 p-5">
               <svg class="w-5 animate-spin mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
                 fill="currentColor">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -303,6 +304,257 @@
             </div>
           </div>
         </div>
+
+        <!--Nodes Table-->
+        <div class="shadow-md rounded-lg bg-white overflow-hidden mt-10">  <!-- Added mt-10 for margin-top -->
+        <div class="flex flex-row flex-auto items-center p-3 px-5 border border-b-2 border-gray-100">
+          <div class="flex-grow">
+            <p class="text-2xl font-medium">Nodes</p>
+          </div>
+          <div class="flex-shrink-0">
+            <button @click="clientCreate = true; clientCreateIsNode = true; clientCreateName = '';"
+              class="hover:bg-red-800 hover:border-red-800 hover:text-white text-gray-700 border-2 border-gray-100 py-2 px-4 rounded inline-flex items-center transition">
+              <svg class="w-4 mr-2" inline xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span class="text-sm">New</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <!-- Node -->
+          <div v-if="filteredNodes && filteredNodes.length > 0" v-for="client in filteredNodes" :key="client.id"
+            class="relative overflow-hidden border-b border-gray-100 border-solid">
+
+              <!-- Chart -->
+              <div class="absolute z-0 bottom-0 left-0 right-0" style="width: 100%; height: 20%;">
+                <!-- Bar -->
+                <div v-for="(_, index) in client.transferTxHistory" :style="{
+                    display: 'inline-flex',
+                    alignItems: 'flex-end',
+                    width: '2%', // 1/100th of client.transferTxHistory.length
+                    height: '100%',
+                    padding: '0 3px',
+                    boxSizing: 'border-box',
+                    fontSize: 0,
+                  }">
+
+                  <!-- TX -->
+                  <div :style="{
+                    minHeight: '0px',
+                    minWidth: '2px',
+                    maxWidth: '4px',
+                    width: '50%',
+                    marginRight: '1px',
+                    height: Math.round((client.transferTxHistory[index]/client.transferMax)*100) + '%',
+                    background: client.hoverTx
+                      ? '#992922'
+                      : '#F3F4F6',
+                    transition: 'all 0.2s',
+                    borderRadius: '2px 2px 0 0',
+                  }"></div>
+
+                  <!-- RX -->
+                  <div :style="{
+                    minHeight: '0px',
+                    minWidth: '2px',
+                    maxWidth: '4px',
+                    width: '50%',
+                    height: Math.round((client.transferRxHistory[index]/client.transferMax)*100) + '%',
+                    background: client.hoverRx
+                    ? '#992922'
+                    : '#F0F1F3',
+                    transition: 'all 0.2s',
+                    borderRadius: '2px 2px 0 0',
+                  }"></div>
+                </div>
+              </div>
+
+              <div class="relative p-5 z-10 flex flex-row">
+                <div class="h-10 w-10 mr-5 rounded-full bg-gray-50 relative">
+                  <svg class="w-6 m-2 text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                    fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                      clip-rule="evenodd" />
+                  </svg>
+                  <img v-if="client.avatar" :src="client.avatar" class="w-10 rounded-full absolute top-0 left-0" />
+
+                  <div
+                    v-if="client.latestHandshakeAt && ((new Date() - new Date(client.latestHandshakeAt) < 1000 * 60 * 10))">
+                    <div class="animate-ping w-4 h-4 p-1 bg-red-100 rounded-full absolute -bottom-1 -right-1"></div>
+                    <div class="w-2 h-2 bg-red-800 rounded-full absolute bottom-0 right-0"></div>
+                  </div>
+                </div>
+
+                <div class="flex-grow">
+
+                  <!-- Name -->
+                  <div class="text-gray-700 group" :title="'Created on ' + dateTime(new Date(client.createdAt))">
+
+                    <!-- Show -->
+                    <input v-show="clientEditNameId === client.id" v-model="clientEditName"
+                      v-on:keyup.enter="updateClientName(client, clientEditName); clientEditName = null; clientEditNameId = null;"
+                      v-on:keyup.escape="clientEditName = null; clientEditNameId = null;"
+                      :ref="'client-' + client.id + '-name'"
+                      class="rounded px-1 border-2 border-gray-100 focus:border-gray-200 outline-none w-30" />
+                    <span v-show="clientEditNameId !== client.id"
+                      class="inline-block border-t-2 border-b-2 border-transparent">{{client.name}}</span>
+
+                    <!-- Edit -->
+                    <span v-show="clientEditNameId !== client.id"
+                      @click="clientEditName = client.name; clientEditNameId = client.id; setTimeout(() => $refs['client-' + client.id + '-name'][0].select(), 1);"
+                      class="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                      <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-4 w-4 inline align-middle opacity-25 hover:opacity-100" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </span>
+                  </div>
+
+                  <!-- Info -->
+                  <div class="text-gray-400 text-xs">
+
+                    <!-- Address -->
+                    <span class="group">
+
+                      <!-- Show -->
+                      <input v-show="clientEditAddressId === client.id" v-model="clientEditAddress"
+                        v-on:keyup.enter="updateClientAddress(client, clientEditAddress); clientEditAddress = null; clientEditAddressId = null;"
+                        v-on:keyup.escape="clientEditAddress = null; clientEditAddressId = null;"
+                        :ref="'client-' + client.id + '-address'"
+                        class="rounded border-2 border-gray-100 focus:border-gray-200 outline-none w-20 text-black" />
+                      <span v-show="clientEditAddressId !== client.id"
+                        class="inline-block border-t-2 border-b-2 border-transparent">{{client.address}}</span>
+
+                      <!-- Edit -->
+                      <span v-show="clientEditAddressId !== client.id"
+                        @click="clientEditAddress = client.address; clientEditAddressId = client.id; setTimeout(() => $refs['client-' + client.id + '-address'][0].select(), 1);"
+                        class="cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                          class="h-4 w-4 inline align-middle opacity-25 hover:opacity-100" fill="none"
+                          viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </span>
+                    </span>
+
+                    <!-- Transfer TX -->
+                    <span v-if="client.transferTx" :title="'Total Download: ' + bytes(client.transferTx)"
+                      @mouseover="client.hoverTx = clientsPersist[client.id].hoverTx = true;"
+                      @mouseleave="client.hoverTx = clientsPersist[client.id].hoverTx = false;"
+                      style="cursor: default;">
+                      ·
+                      <svg class="align-middle h-3 inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                          d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z"
+                          clip-rule="evenodd" />
+                      </svg>
+                      {{client.transferTxCurrent | bytes}}/s
+                    </span>
+
+                    <!-- Transfer RX -->
+                    <span v-if="client.transferRx" :title="'Total Upload: ' + bytes(client.transferRx)"
+                      @mouseover="client.hoverRx = clientsPersist[client.id].hoverRx = true;"
+                      @mouseleave="client.hoverRx = clientsPersist[client.id].hoverRx = false;"
+                      style="cursor: default;">
+                      ·
+                      <svg class="align-middle h-3 inline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                          d="M3.293 9.707a1 1 0 010-1.414l6-6a1 1 0 011.414 0l6 6a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L4.707 9.707a1 1 0 01-1.414 0z"
+                          clip-rule="evenodd" />
+                      </svg>
+                      {{client.transferRxCurrent | bytes}}/s
+                    </span>
+
+                    <!-- Last seen -->
+                    <span v-if="client.latestHandshakeAt"
+                      :title="'Last seen on ' + dateTime(new Date(client.latestHandshakeAt))">
+                      · {{new Date(client.latestHandshakeAt) | timeago}}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="text-right">
+                  <div class="text-gray-400">
+
+                    <!-- Enable/Disable -->
+                    <div @click="disableClient(client)" v-if="client.enabled === true" title="Disable Client"
+                      class="inline-block align-middle rounded-full w-10 h-6 mr-1 bg-red-800 cursor-pointer hover:bg-red-700 transition-all">
+                      <div class="rounded-full w-4 h-4 m-1 ml-5 bg-white"></div>
+                    </div>
+                    <div @click="enableClient(client)" v-if="client.enabled === false" title="Enable Client"
+                      class="inline-block align-middle rounded-full w-10 h-6 mr-1 bg-gray-200 cursor-pointer hover:bg-gray-300 transition-all">
+                      <div class="rounded-full w-4 h-4 m-1 bg-white"></div>
+                    </div>
+
+                    <!-- Show QR-->
+                    <button class="align-middle bg-gray-100 hover:bg-red-800 hover:text-white p-2 rounded transition"
+                      title="Show QR Code" @click="qrcode = `./api/wireguard/client/${client.id}/qrcode.svg`">
+                      <svg class="w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+                      </svg>
+                    </button>
+
+                    <!-- Download Config -->
+                    <a :href="'./api/wireguard/client/' + client.id + '/configuration'" download
+                      class="align-middle inline-block bg-gray-100 hover:bg-red-800 hover:text-white p-2 rounded transition"
+                      title="Download Configuration">
+                      <svg class="w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </a>
+
+                    <!-- Delete -->
+                    <button class="align-middle bg-gray-100 hover:bg-red-800 hover:text-white p-2 rounded transition"
+                      title="Delete Client" @click="clientDelete = client">
+                      <svg class="w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                          d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                          clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+          </div>
+          <div v-if="filteredNodes && filteredNodes.length === 0">
+            <p class="text-center m-10 text-gray-400 text-sm">There are no clients yet.<br /><br />
+              <button @click="clientCreate = true; clientCreateIsNode = true; clientCreateName = '';"
+                class="bg-red-800 text-white hover:bg-red-700 border-2 border-none py-2 px-4 rounded inline-flex items-center transition">
+                <svg class="w-4 mr-2" inline xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span class="text-sm">New Node</span>
+              </button>
+            </p>
+          </div>
+          <div v-if="filteredNodes === null" class="text-gray-200 p-5">
+             <svg class="w-5 animate-spin mx-auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                fill="currentColor">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+              </svg>
+          </div>
+        </div>
+      </div>
+
 
         <!-- QR Code-->
         <div v-if="qrcode">
@@ -319,7 +571,7 @@
           </div>
         </div>
 
-        <!-- Create Dialog -->
+        <!-- Create client Dialog -->
         <div v-if="clientCreate" class="fixed z-10 inset-0 overflow-y-auto">
           <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <!--
@@ -509,13 +761,6 @@
       </div>
 
     </div>
-
-    <p v-cloak class="text-center m-10 text-gray-300 text-xs">Made by <a target="_blank" class="hover:underline"
-        href="https://emilenijssen.nl/?ref=wg-easy">Emile Nijssen</a> · <a class="hover:underline"
-        href="https://github.com/sponsors/WeeJeWel" target="_blank">Donate</a> · <a class="hover:underline"
-        href="https://github.com/weejewel/wg-easy" target="_blank">GitHub</a></p>
-
-
   </div>
 
   <script src="./js/vendor/vue.min.js"></script>

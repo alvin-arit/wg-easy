@@ -109,8 +109,8 @@ module.exports = class Server {
         res.send(config);
       }))
       .post('/api/wireguard/client', Util.promisify(async req => {
-        const { name } = req.body;
-        return WireGuard.createClient({ name });
+        const { name, isNode } = req.body;
+        return WireGuard.createClient({ name, isNode });
       }))
       .delete('/api/wireguard/client/:clientId', Util.promisify(async req => {
         const { clientId } = req.params;

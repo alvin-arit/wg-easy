@@ -141,6 +141,7 @@ AllowedIPs = ${client.address}/32`;
       createdAt: new Date(client.createdAt),
       updatedAt: new Date(client.updatedAt),
       allowedIPs: client.allowedIPs,
+      isNode: client.isNode,
 
       persistentKeepalive: null,
       latestHandshakeAt: null,
@@ -219,7 +220,7 @@ Endpoint = ${WG_HOST}:${WG_PORT}`;
     });
   }
 
-  async createClient({ name }) {
+  async createClient({ name, isNode }) {
     if (!name) {
       throw new Error('Missing: Name');
     }
@@ -246,7 +247,6 @@ Endpoint = ${WG_HOST}:${WG_PORT}`;
     if (!address) {
       throw new Error('Maximum number of clients reached.');
     }
-
     // Create Client
     const clientId = uuid.v4();
     const client = {
@@ -255,6 +255,7 @@ Endpoint = ${WG_HOST}:${WG_PORT}`;
       privateKey,
       publicKey,
       preSharedKey,
+      isNode,
 
       createdAt: new Date(),
       updatedAt: new Date(),

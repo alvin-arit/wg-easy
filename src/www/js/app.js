@@ -30,12 +30,15 @@ new Vue({
     authenticating: false,
     password: null,
     requiresPassword: null,
-
     clients: null,
+    filteredClients: null,
+    filteredNodes: null,
     clientsPersist: {},
     clientDelete: null,
     clientCreate: null,
+    nodeCreate: null,
     clientCreateName: '',
+    clientCreateIsNode: false,
     clientEditName: null,
     clientEditNameId: null,
     clientEditAddress: null,
@@ -127,7 +130,12 @@ new Vue({
       if (!this.authenticated) return;
 
       const clients = await this.api.getClients();
-      this.clients = clients.map(client => {
+
+      // Temporary arrays to hold the separated clients
+      const tempFilteredClients = [];
+      const tempFilteredNodes = [];
+
+      clients.forEach(client => {
         if (client.name.includes('@') && client.name.includes('.')) {
           client.avatar = `https://www.gravatar.com/avatar/${md5(client.name)}?d=blank`;
         }
@@ -167,9 +175,19 @@ new Vue({
         client.hoverTx = this.clientsPersist[client.id].hoverTx;
         client.hoverRx = this.clientsPersist[client.id].hoverRx;
 
-        return client;
+        // Separate clients based on the isNode property
+        if (client.isNode) {
+          tempFilteredNodes.push(client);
+        } else {
+          tempFilteredClients.push(client);
+        }
       });
+
+      // Assign the temporary arrays to the data properties
+      this.filteredClients = tempFilteredClients;
+      this.filteredNodes = tempFilteredNodes;
     },
+
     login(e) {
       e.preventDefault();
 
@@ -208,9 +226,10 @@ new Vue({
     },
     createClient() {
       const name = this.clientCreateName;
+      const isNode = this.clientCreateIsNode;
       if (!name) return;
 
-      this.api.createClient({ name })
+      this.api.createClient({ name, isNode })
         .catch(err => alert(err.message || err.toString()))
         .finally(() => this.refresh().catch(console.error));
     },
