@@ -17,6 +17,7 @@ const {
   WG_MTU,
   WG_DEFAULT_DNS,
   WG_DEFAULT_ADDRESS,
+  WG_DEFAULT_ADDRESSV6,
   WG_PERSISTENT_KEEPALIVE,
   WG_ALLOWED_IPS,
   WG_PRE_UP,
@@ -46,12 +47,14 @@ module.exports = class WireGuard {
             log: 'echo ***hidden*** | wg pubkey',
           });
           const address = WG_DEFAULT_ADDRESS.replace('x', '1');
+          const addressv6 = WG_DEFAULT_ADDRESSV6.replace('x', '1');
 
           config = {
             server: {
               privateKey,
               publicKey,
               address,
+              addressv6,
             },
             clients: {},
           };
@@ -94,7 +97,7 @@ module.exports = class WireGuard {
 # Server
 [Interface]
 PrivateKey = ${config.server.privateKey}
-Address = ${config.server.address}/24
+Address = ${config.server.address}/24, ${config.server.addressv6}/64
 ListenPort = 51820
 PreUp = ${WG_PRE_UP}
 PostUp = ${WG_POST_UP}
@@ -111,7 +114,7 @@ PostDown = ${WG_POST_DOWN}
 [Peer]
 PublicKey = ${client.publicKey}
 PresharedKey = ${client.preSharedKey}
-AllowedIPs = ${client.address}/32`;
+AllowedIPs = ${client.address}/32, ${client.addressv6}/128`;
     }
 
     debug('Config saving...');
@@ -137,6 +140,7 @@ AllowedIPs = ${client.address}/32`;
       name: client.name,
       enabled: client.enabled,
       address: client.address,
+      addressv6: client.addressv6,
       publicKey: client.publicKey,
       createdAt: new Date(client.createdAt),
       updatedAt: new Date(client.updatedAt),
@@ -200,7 +204,7 @@ AllowedIPs = ${client.address}/32`;
     return `
 [Interface]
 PrivateKey = ${client.privateKey}
-Address = ${client.address}/24
+Address = ${client.address}/24, ${client.addressv6}/128
 ${WG_DEFAULT_DNS ? `DNS = ${WG_DEFAULT_DNS}` : ''}
 ${WG_MTU ? `MTU = ${WG_MTU}` : ''}
 
