@@ -12,7 +12,7 @@ module.exports.WG_PORT = process.env.WG_PORT || 51820;
 module.exports.WG_MTU = process.env.WG_MTU || null;
 module.exports.WG_PERSISTENT_KEEPALIVE = process.env.WG_PERSISTENT_KEEPALIVE || 0;
 module.exports.WG_DEFAULT_ADDRESS = process.env.WG_DEFAULT_ADDRESS || '100.64.0.x';
-module.exports.WG_DEFAULT_ADDRESSV6 = process.env.WG_DEFAULT_ADDRESSV6 || 'fd12:3456:789a:x::';
+module.exports.WG_DEFAULT_ADDRESSV6 = process.env.WG_DEFAULT_ADDRESSV6 || 'fd42:42:42::x';
 module.exports.WG_DEFAULT_DNS = typeof process.env.WG_DEFAULT_DNS === 'string'
   ? process.env.WG_DEFAULT_DNS
   : '1.1.1.1';
@@ -24,6 +24,7 @@ iptables -t nat -A POSTROUTING -s ${module.exports.WG_DEFAULT_ADDRESS.replace('x
 iptables -A INPUT -p udp -m udp --dport 51820 -j ACCEPT;
 iptables -A FORWARD -i wg0 -j ACCEPT;
 iptables -A FORWARD -o wg0 -j ACCEPT;
+ip6tables -A FORWARD -i wg0 -j ACCEPT;
 `.split('\n').join(' ');
 
 module.exports.WG_PRE_DOWN = process.env.WG_PRE_DOWN || '';
