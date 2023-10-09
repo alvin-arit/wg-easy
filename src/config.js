@@ -1,6 +1,6 @@
 'use strict';
 
-const { release } = require('./package.json');
+const {release} = require('./package.json');
 
 module.exports.RELEASE = release;
 module.exports.PORT = process.env.PORT || 51821;
@@ -14,9 +14,9 @@ module.exports.WG_PERSISTENT_KEEPALIVE = process.env.WG_PERSISTENT_KEEPALIVE || 
 module.exports.WG_DEFAULT_ADDRESS = process.env.WG_DEFAULT_ADDRESS || '100.64.0.x';
 module.exports.WG_DEFAULT_ADDRESSV6 = process.env.WG_DEFAULT_ADDRESSV6 || 'fd42:42:42::x';
 module.exports.WG_DEFAULT_DNS = typeof process.env.WG_DEFAULT_DNS === 'string'
-  ? process.env.WG_DEFAULT_DNS
-  : '1.1.1.1';
-module.exports.WG_ALLOWED_IPS = process.env.WG_ALLOWED_IPS || '0.0.0.0/0, ::/0';
+    ? process.env.WG_DEFAULT_DNS
+    : '1.1.1.1';
+module.exports.WG_ALLOWED_IPS = process.env.WG_ALLOWED_IPS || '100.64.0.0/24, fd42:42:42::/48';
 
 module.exports.WG_PRE_UP = process.env.WG_PRE_UP || '';
 module.exports.WG_POST_UP = process.env.WG_POST_UP || `
